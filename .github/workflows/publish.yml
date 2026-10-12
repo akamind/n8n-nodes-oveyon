@@ -1,28 +1,36 @@
 name: Publish to npm
 
-# Bootstrap the first publication with the granular GitHub secret
-# NPM_PUBLISH_TOKEN. It is available only to the final publish step.
-# After configuring npm trusted publishing for this repository and workflow,
-# remove that secret so npm uses GitHub OIDC. Provenance is required in both cases.
+# Releases publish only from a v* tag, through npm Trusted Publishing (GitHub
+# OIDC). No npm token exists in this repository. The build job runs the whole
+# toolchain without an OIDC token. The publish job only downloads the exact
+# tarball the build uploaded and accepts it only if its SHA-256 equals
+# approvedTarballSha256 in release/approved-<version>.json read from the tag
+# commit itself, never a value produced by the build job.
+# npm must trust this repository, this filename and the "npm" environment.
 on:
   push:
     tags: ['v*']
 
-permissions:
-  contents: read
+permissions: {}
 
 concurrency:
   group: npm-release
   cancel-in-progress: false
 
+defaults:
+  run:
+    shell: bash
+
 jobs:
-  publish:
+  build:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      id-token: write
+    outputs:
+      tarball: ${{ steps.pack.outputs.tarball }}
+      artifact-id: ${{ steps.upload.outputs.artifact-id }}
     steps:
-      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
         with:
           persist-credentials: false
           fetch-depth: 0
@@ -30,13 +38,13 @@ jobs:
         env:
           RELEASE_TAG: ${{ github.ref_name }}
         run: |
+          # shellcheck disable=SC2016 # the ${...} below is a JavaScript template literal
           node -e 'const p = require("./package.json"); if (process.env.RELEASE_TAG !== `v${p.version}`) process.exit(1)'
           git merge-base --is-ancestor HEAD origin/main
-      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
         with:
           node-version: '24'
           package-manager-cache: false
-          registry-url: https://registry.npmjs.org
       - run: npm install --global npm@12.2.0 --ignore-scripts --no-audit --no-fund
       - run: npm ci --ignore-scripts --no-audit --no-fund
       - run: npm run build
@@ -46,11 +54,61 @@ jobs:
       - name: Test release archive verification
         run: python3 -B -m unittest discover -s release -p 'test_*.py'
       - name: Pack and compare every file with the approved release
+        id: pack
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
         run: |
+          version="${RELEASE_TAG#v}"
+          tarball="oveyon-n8n-nodes-oveyon-$version.tgz"
           mkdir release-artifacts
           npm pack --ignore-scripts --pack-destination release-artifacts
-          python3 -B scripts/verify-release.py release-artifacts/oveyon-n8n-nodes-oveyon-0.1.0.tgz release/approved-0.1.0.json --require-approved-sha256
-      - name: Publish the verified tarball with provenance
+          python3 -B scripts/verify-release.py "release-artifacts/$tarball" "release/approved-$version.json" --require-approved-sha256
+          sha256="$(sha256sum "release-artifacts/$tarball" | cut -d ' ' -f 1)"
+          echo "tarball=$tarball" >> "$GITHUB_OUTPUT"
+          echo "Release tarball $tarball sha256 $sha256" >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        id: upload
+        with:
+          name: npm-tarball
+          path: release-artifacts/${{ steps.pack.outputs.tarball }}
+          if-no-files-found: error
+          retention-days: 7
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    environment: npm
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          artifact-ids: ${{ needs.build.outputs.artifact-id }}
+          path: release-artifacts
+      - name: Check the tarball against the approved manifest of the tag commit
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_PUBLISH_TOKEN }}
-        run: npm publish ./release-artifacts/oveyon-n8n-nodes-oveyon-0.1.0.tgz --access public --provenance --ignore-scripts
+          REPOSITORY: ${{ github.repository }}
+          COMMIT: ${{ github.sha }}
+          RELEASE_TAG: ${{ github.ref_name }}
+          TARBALL: ${{ needs.build.outputs.tarball }}
+        run: |
+          version="${RELEASE_TAG#v}"
+          test "$TARBALL" = "oveyon-n8n-nodes-oveyon-$version.tgz"
+          files=(release-artifacts/*)
+          test "${#files[@]}" -eq 1
+          test "${files[0]}" = "release-artifacts/$TARBALL"
+          curl -fsSL --proto '=https' --max-time 30 -o approved.json \
+            "https://raw.githubusercontent.com/$REPOSITORY/$COMMIT/release/approved-$version.json"
+          expected="$(jq -er --arg v "$version" 'select(.packageName == "@oveyon/n8n-nodes-oveyon" and .version == $v) | .approvedTarballSha256' approved.json)"
+          [[ "$expected" =~ ^[0-9a-f]{64}$ ]]
+          echo "$expected  release-artifacts/$TARBALL" | sha256sum --check --strict
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
+        with:
+          node-version: '24'
+          package-manager-cache: false
+          registry-url: https://registry.npmjs.org
+      - run: npm install --global npm@12.2.0 --ignore-scripts --no-audit --no-fund
+      - name: Publish the checked tarball with provenance
+        env:
+          TARBALL: ${{ needs.build.outputs.tarball }}
+        run: npm publish "./release-artifacts/$TARBALL" --access public --provenance --ignore-scripts
