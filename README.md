@@ -2,7 +2,7 @@
 
 Connect [Oveyon](https://oveyon.com) email to n8n. This package provides an **Oveyon** action node and an **Oveyon Trigger** for received email and delivery events.
 
-MIT, maintained by Akamind Inc. This package is a release candidate; npm publication and n8n community verification are separate steps and are not claimed here.
+MIT, maintained by Akamind Inc. Version [0.1.0 is published on npm](https://www.npmjs.com/package/@oveyon/n8n-nodes-oveyon) with verified provenance. The maintainer submitted the package to n8n for review on October 12, 2026; n8n verification is pending.
 
 ## Requirements and installation
 
@@ -10,7 +10,7 @@ MIT, maintained by Akamind Inc. This package is a release candidate; npm publica
 - n8n with community nodes enabled. The development target is **n8n 2.42.6 on Node.js 24**. Earlier versions are not claimed as tested. The `n8n-workflow` peer uses `*` as required by n8n's verification rules; this does not promise compatibility with every n8n version.
 - A public HTTPS n8n webhook URL for events. Keep the n8n clock synchronized.
 
-After publication, self-hosted owners can install `@oveyon/n8n-nodes-oveyon` from **Settings → Community nodes**, following [n8n's installation guide](https://docs.n8n.io/integrations/community-nodes/installation/). Discovery in n8n Cloud requires verification by n8n.
+Self-hosted owners can install `@oveyon/n8n-nodes-oveyon` from **Settings → Community nodes**, following [n8n's installation guide](https://docs.n8n.io/integrations/community-nodes/installation/). Discovery in n8n Cloud requires verification by n8n.
 
 For local development, build the source and install the resulting npm tarball in an isolated n8n environment. Do not replace a production n8n installation to test the package.
 
@@ -124,10 +124,10 @@ npm pack --ignore-scripts
 
 `scan` runs the official static scanner on source and compiled output locally. It does not validate public npm provenance or approve the package. After release, run `npx @n8n/scan-community-package @oveyon/n8n-nodes-oveyon@0.1.0` against the published version and submit through the [n8n Creator Portal](https://creators.n8n.io/nodes).
 
-The GitHub Actions workflow builds, tests, scans, inspects, then publishes with provenance. Configure npm trusted publishing for the exact repository and workflow first; the workflow does not contain a token. Publication and n8n approval require the maintainer's release process. A source repository URL in metadata is not evidence that the repository has already been created or made public.
+The GitHub Actions workflow builds, tests, scans, compares the tarball with the approved release manifest, then publishes with provenance. The first release used a granular npm token supplied only to the publishing step through a GitHub Actions secret; that bootstrap secret has been removed. Before another release, configure npm trusted publishing for this repository and workflow, or provide an appropriately scoped publishing secret. The [0.1.0 publication run](https://github.com/akamind/n8n-nodes-oveyon/actions/runs/38203969227) succeeded. Registry signatures, provenance identity, the downloaded archive, a clean install, declared component imports, and the compiled-package scanner were checked after publication. Authenticated testing against a dedicated Oveyon review account is still pending; earlier runtime tests used isolated fixtures.
 
 ## Support and license
 
-Contact [support@oveyon.com](mailto:support@oveyon.com) for Oveyon account/API questions. Use the repository issue tracker once public for reproducible node problems; remove email content and all secrets before sharing a workflow or execution.
+Contact [support@oveyon.com](mailto:support@oveyon.com) for Oveyon account/API questions. Use the [repository issue tracker](https://github.com/akamind/n8n-nodes-oveyon/issues) for reproducible node problems; remove email content and all secrets before sharing a workflow or execution.
 
 This package is [MIT licensed](./LICENSE). It does not change the license of the Oveyon service or other packages.
