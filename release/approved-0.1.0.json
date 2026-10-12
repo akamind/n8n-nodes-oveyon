@@ -1,0 +1,152 @@
+{
+  "schemaVersion": 1,
+  "packageName": "@oveyon/n8n-nodes-oveyon",
+  "version": "0.1.0",
+  "approvedTarballSha256": "37595f792ae8aad293dbb3b75ca3ccf258f73b7882c91df5efc6c8d99d5c857f",
+  "files": [
+    {
+      "path": "package/LICENSE",
+      "size": 1068,
+      "mode": "0644",
+      "sha256": "f0e25a4fb25e9da89d4b5ef92ece3e065a0ae3987bc28253a3d04631913d4d33"
+    },
+    {
+      "path": "package/README.md",
+      "size": 12643,
+      "mode": "0644",
+      "sha256": "091fc0c716c85e4416c79e13a76567f76ec13e7fda1d071c254eeccb93490678"
+    },
+    {
+      "path": "package/dist/credentials/OveyonApi.credentials.d.ts",
+      "size": 382,
+      "mode": "0644",
+      "sha256": "d77ef5d348ca698a040947ed0d9e1289ef22084888c5f5301d651cdef85baceb"
+    },
+    {
+      "path": "package/dist/credentials/OveyonApi.credentials.js",
+      "size": 3163,
+      "mode": "0644",
+      "sha256": "3c1c58c0982393bc0d50dfbc83e3ac8c55224095902a768981e7c0a15f61dd81"
+    },
+    {
+      "path": "package/dist/credentials/OveyonWebhookApi.credentials.d.ts",
+      "size": 269,
+      "mode": "0644",
+      "sha256": "69944f05499c1cc7da6e080ce5402e8ed91c58018c80cd695075ec067e588e22"
+    },
+    {
+      "path": "package/dist/credentials/OveyonWebhookApi.credentials.js",
+      "size": 1055,
+      "mode": "0644",
+      "sha256": "5d482beca04976ce036e6afc3ad047713222e33e784ebeb73d5fb12a48ba5ced"
+    },
+    {
+      "path": "package/dist/credentials/icons/oveyon.svg",
+      "size": 183,
+      "mode": "0644",
+      "sha256": "a9e6aa25e8951dc6450642e9de52ba47ceb77c54ef7393acc351e66c7c2f84da"
+    },
+    {
+      "path": "package/dist/nodes/Oveyon/Description.d.ts",
+      "size": 105,
+      "mode": "0644",
+      "sha256": "09fed60c8cc87abd3b3f1a0aeab195c94ffaf7b0aa5591cedac680b93dce4bb6"
+    },
+    {
+      "path": "package/dist/nodes/Oveyon/Description.js",
+      "size": 9648,
+      "mode": "0644",
+      "sha256": "35ba4cdad625e46ef7673a4241a05526c633ef7e04741c59a40a106977efdd51"
+    },
+    {
+      "path": "package/dist/nodes/Oveyon/GenericFunctions.d.ts",
+      "size": 814,
+      "mode": "0644",
+      "sha256": "64840c933e6829eb7bc8d3ba0f997dc34f614c905edd1b636282ab442c46f748"
+    },
+    {
+      "path": "package/dist/nodes/Oveyon/GenericFunctions.js",
+      "size": 8357,
+      "mode": "0644",
+      "sha256": "dd9a4e6f7bfd36d1a1cd88e2780644f49d2637c51bb3c3b0b5a16fa95c514fe1"
+    },
+    {
+      "path": "package/dist/nodes/Oveyon/Oveyon.node.d.ts",
+      "size": 271,
+      "mode": "0644",
+      "sha256": "1e64d09468b56bf4317fd1f206fa0bf185bc1a1760556a10dbc654f63996748c"
+    },
+    {
+      "path": "package/dist/nodes/Oveyon/Oveyon.node.js",
+      "size": 8135,
+      "mode": "0644",
+      "sha256": "d52a625f71ccbd8c43cd16258f076573b45e622a95b98a045428508e585bae52"
+    },
+    {
+      "path": "package/dist/nodes/Oveyon/Oveyon.node.json",
+      "size": 248,
+      "mode": "0644",
+      "sha256": "606c9c58cc1e8bc379612890e5cb6bab3ec6031e233f0c7a641f64b8307427b7"
+    },
+    {
+      "path": "package/dist/nodes/Oveyon/OveyonTrigger.node.d.ts",
+      "size": 798,
+      "mode": "0644",
+      "sha256": "8bcfa8addc21a2156a19c6c5066b12b36f2ab9451074d485a38ffb34fdabd4d6"
+    },
+    {
+      "path": "package/dist/nodes/Oveyon/OveyonTrigger.node.js",
+      "size": 7365,
+      "mode": "0644",
+      "sha256": "5ff29da482d51ebf07986e24f8891f8ff429d1c3e899ead8f565f275e5f20c5d"
+    },
+    {
+      "path": "package/dist/nodes/Oveyon/OveyonTrigger.node.json",
+      "size": 262,
+      "mode": "0644",
+      "sha256": "696a102f57973526cca062a6a3d78362af60259c0cb8856f2526698eae6a3039"
+    },
+    {
+      "path": "package/dist/nodes/Oveyon/WebhookFunctions.d.ts",
+      "size": 478,
+      "mode": "0644",
+      "sha256": "6d8c83d2ac687cfa4dbcd2d73f2dabd12d04c7ab8f672e88acdf1cb4b41db22d"
+    },
+    {
+      "path": "package/dist/nodes/Oveyon/WebhookFunctions.js",
+      "size": 4243,
+      "mode": "0644",
+      "sha256": "d5fd80b919354dc8f123e404c7e72301d7000af5ee01dd694639e221700b3e0b"
+    },
+    {
+      "path": "package/dist/nodes/Oveyon/oveyon.svg",
+      "size": 183,
+      "mode": "0644",
+      "sha256": "a9e6aa25e8951dc6450642e9de52ba47ceb77c54ef7393acc351e66c7c2f84da"
+    },
+    {
+      "path": "package/examples/delivery-events.json",
+      "size": 583,
+      "mode": "0644",
+      "sha256": "8ad73a7baecbe6fa911ed9e24c68a4b4ebd0400f20d8a8abafa8045d37c8ce3e"
+    },
+    {
+      "path": "package/examples/inbound-setup.json",
+      "size": 420,
+      "mode": "0644",
+      "sha256": "a4cff31322f8e2ec1930cf68580d4de4858b60e7e5548ad9dc138c1c4cf3cef3"
+    },
+    {
+      "path": "package/examples/sandbox-send.json",
+      "size": 1162,
+      "mode": "0644",
+      "sha256": "f92b5eb1374d8c5aae8301aab315775227902cea2736934bb43d82310376937d"
+    },
+    {
+      "path": "package/package.json",
+      "size": 1706,
+      "mode": "0644",
+      "sha256": "0e04d2ad9c2aa02635f68b5cd46aa9fed27030ca7ec5baea3c8877b7d34e35e2"
+    }
+  ]
+}

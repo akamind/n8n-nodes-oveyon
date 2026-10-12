@@ -1,0 +1,57 @@
+{
+  "name": "Oveyon - sandbox send",
+  "nodes": [
+    {
+      "id": "manual",
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "parameters": {},
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "id": "send",
+      "name": "Sandbox Email",
+      "type": "@oveyon/n8n-nodes-oveyon.oveyon",
+      "typeVersion": 1,
+      "parameters": {
+        "resource": "email",
+        "operation": "send",
+        "from": "sender@example.com",
+        "to": "recipient@example.com",
+        "subject": "Oveyon sandbox example",
+        "text": "This email is frozen in sandbox.",
+        "html": "",
+        "sendOptions": {
+          "sandbox": true,
+          "idempotencyKey": "replace-with-your-business-operation-id"
+        }
+      },
+      "position": [
+        240,
+        0
+      ]
+    }
+  ],
+  "connections": {
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "Sandbox Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {}
+}

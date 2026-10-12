@@ -1,0 +1,24 @@
+{
+  "name": "Oveyon - inbound setup",
+  "nodes": [
+    {
+      "id": "inbound",
+      "name": "Oveyon Trigger",
+      "type": "@oveyon/n8n-nodes-oveyon.oveyonTrigger",
+      "typeVersion": 1,
+      "parameters": {
+        "mode": "inboundSetup"
+      },
+      "position": [
+        0,
+        0
+      ]
+    }
+  ],
+  "connections": {},
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {}
+}

@@ -1,0 +1,71 @@
+{
+  "name": "@oveyon/n8n-nodes-oveyon",
+  "version": "0.1.0",
+  "description": "Send and receive email and delivery events with Oveyon in n8n",
+  "license": "MIT",
+  "author": {
+    "name": "Akamind Inc",
+    "email": "support@oveyon.com"
+  },
+  "homepage": "https://oveyon.com",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/akamind/n8n-nodes-oveyon.git"
+  },
+  "bugs": {
+    "url": "https://github.com/akamind/n8n-nodes-oveyon/issues"
+  },
+  "keywords": [
+    "n8n-community-node-package",
+    "oveyon",
+    "email",
+    "webhook",
+    "inbound"
+  ],
+  "engines": {
+    "node": ">=24"
+  },
+  "files": [
+    "dist",
+    "examples",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+		"build": "n8n-node build && node scripts/copy-codex.cjs",
+    "lint": "n8n-node lint",
+    "lint:fix": "n8n-node lint --fix",
+    "test": "node --test tests/*.test.cjs",
+    "scan": "node scripts/scan-local.mjs",
+    "pack:check": "node scripts/check-pack.cjs",
+    "dev": "n8n-node dev"
+  },
+  "n8n": {
+    "n8nNodesApiVersion": 1,
+    "strict": true,
+    "credentials": [
+      "dist/credentials/OveyonApi.credentials.js",
+      "dist/credentials/OveyonWebhookApi.credentials.js"
+    ],
+    "nodes": [
+      "dist/nodes/Oveyon/Oveyon.node.js",
+      "dist/nodes/Oveyon/OveyonTrigger.node.js"
+    ]
+  },
+  "devDependencies": {
+    "@n8n/node-cli": "0.51.4",
+    "@n8n/scan-community-package": "0.38.0",
+    "@types/node": "22.20.5",
+    "eslint": "9.39.4",
+    "n8n-workflow": "2.42.3",
+    "prettier": "3.8.3",
+    "typescript": "5.9.3"
+  },
+  "peerDependencies": {
+    "n8n-workflow": "*"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  }
+}

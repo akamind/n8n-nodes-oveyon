@@ -1,0 +1,56 @@
+name: Publish to npm
+
+# Bootstrap the first publication with the granular GitHub secret
+# NPM_PUBLISH_TOKEN. It is available only to the final publish step.
+# After configuring npm trusted publishing for this repository and workflow,
+# remove that secret so npm uses GitHub OIDC. Provenance is required in both cases.
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: read
+
+concurrency:
+  group: npm-release
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Verify release tag and branch
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          node -e 'const p = require("./package.json"); if (process.env.RELEASE_TAG !== `v${p.version}`) process.exit(1)'
+          git merge-base --is-ancestor HEAD origin/main
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: '24'
+          package-manager-cache: false
+          registry-url: https://registry.npmjs.org
+      - run: npm install --global npm@12.2.0 --ignore-scripts --no-audit --no-fund
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - run: npm run build
+      - run: npm run lint
+      - run: npm test
+      - run: npm run scan
+      - name: Test release archive verification
+        run: python3 -B -m unittest discover -s release -p 'test_*.py'
+      - name: Pack and compare every file with the approved release
+        run: |
+          mkdir release-artifacts
+          npm pack --ignore-scripts --pack-destination release-artifacts
+          python3 -B scripts/verify-release.py release-artifacts/oveyon-n8n-nodes-oveyon-0.1.0.tgz release/approved-0.1.0.json --require-approved-sha256
+      - name: Publish the verified tarball with provenance
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_PUBLISH_TOKEN }}
+        run: npm publish ./release-artifacts/oveyon-n8n-nodes-oveyon-0.1.0.tgz --access public --provenance --ignore-scripts

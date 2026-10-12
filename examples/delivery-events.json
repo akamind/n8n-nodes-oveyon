@@ -1,0 +1,32 @@
+{
+  "name": "Oveyon - delivery events",
+  "nodes": [
+    {
+      "id": "delivery",
+      "name": "Oveyon Trigger",
+      "type": "@oveyon/n8n-nodes-oveyon.oveyonTrigger",
+      "typeVersion": 1,
+      "parameters": {
+        "mode": "deliveryLive",
+        "events": [
+          "delivered",
+          "bounced",
+          "opened",
+          "clicked",
+          "complained",
+          "blocked"
+        ]
+      },
+      "position": [
+        0,
+        0
+      ]
+    }
+  ],
+  "connections": {},
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {}
+}
