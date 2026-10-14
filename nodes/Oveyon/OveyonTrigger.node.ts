@@ -99,22 +99,6 @@ export class OveyonTrigger implements INodeType {
 					'Inbound Setup only echoes the initial challenge. Both Live modes require the signing secret for the corresponding Oveyon endpoint.',
 			},
 			{
-				displayName:
-					'Publish this workflow, then paste its Production URL into an Oveyon inbound webhook channel. After Oveyon shows the signing secret, save it as an Oveyon Webhook credential, switch to Live, and publish again. Setup never starts a workflow; real events receive HTTP 503 until Live is enabled.',
-				name: 'setupNotice',
-				type: 'notice',
-				default: '',
-				displayOptions: { show: { mode: ['inboundSetup'] } },
-			},
-			{
-				displayName:
-					'Register the Production URL manually in Oveyon and save that endpoint’s signing secret in the selected credential. Configure only the events selected below. This node does not create or delete remote webhooks.',
-				name: 'deliveryNotice',
-				type: 'notice',
-				default: '',
-				displayOptions: { show: { mode: ['deliveryLive'] } },
-			},
-			{
 				displayName: 'Events',
 				name: 'events',
 				type: 'multiOptions',

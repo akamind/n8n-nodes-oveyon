@@ -91,11 +91,36 @@ test('repeated pagination cursor and empty pages fail instead of looping', async
 	}
 });
 
-test('return all has an explicit 10,000-item ceiling and never silently truncates', async () => {
-	const pages = Array.from({ length: 100 }, (_, p) => ({ data: Array.from({ length: 100 }, (_, i) => ({ id: `${p}-${i}` })), next_cursor: `page-${p + 1}` }));
+test('return all follows the cursor past 10,000 items and stops at the last page', async () => {
+	const pages = Array.from({ length: 101 }, (_, p) => ({ data: Array.from({ length: 100 }, (_, i) => ({ id: `${p}-${i}` })), next_cursor: `page-${p + 1}` }));
+	pages.push({ data: [{ id: 'last' }], next_cursor: null });
 	const ctx = context({}, pages);
-	await assert.rejects(getMany.call(ctx, '/v1/messages', {}, true, 50), /10,?000-item safety limit/);
-	assert.equal(ctx.calls.length, 100);
+	const items = await getMany.call(ctx, '/v1/messages', {}, true, 50);
+	assert.equal(items.length, 10101);
+	assert.equal(items[10100].id, 'last');
+	assert.equal(ctx.calls.length, 102);
+	assert.ok(ctx.calls.every(call => call.qs.limit === 100));
+	assert.equal(ctx.calls[0].qs.cursor, undefined);
+	assert.equal(ctx.calls[101].qs.cursor, 'page-101');
+});
+
+test('a cursor saved by the removed Cursor filter is ignored', async () => {
+	const ctx = context({ resource: 'email', operation: 'getMany', returnAll: false, limit: 10, simplify: false, filters: { cursor: 'stale-cursor', sender: 'sender@example.com' } }, [{ data: [{ id: 'one' }], next_cursor: null }]);
+	const result = await new Oveyon().execute.call(ctx);
+	assert.equal(result[0].length, 1);
+	assert.equal(ctx.calls.length, 1);
+	assert.equal(ctx.calls[0].qs.cursor, undefined);
+	assert.equal(ctx.calls[0].qs.sender, 'sender@example.com');
+});
+
+test('action node has no notices and no user-facing cursor; reply explains sandbox in its description', () => {
+	const properties = new Oveyon().description.properties;
+	assert.deepEqual(properties.filter(property => property.type === 'notice').map(property => property.name), []);
+	const filters = properties.find(property => property.name === 'filters');
+	assert.equal(filters.options.some(option => option.name === 'cursor'), false);
+	const reply = properties.filter(property => property.name === 'operation').flatMap(property => property.options).find(option => option.value === 'reply');
+	assert.match(reply.description, /sandbox status of the API key/);
+	assert.match(reply.description, /sandbox API key to test without delivery/);
 });
 
 test('simplify preserves inbound quarantine and authentication context', async () => {

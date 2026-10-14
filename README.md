@@ -2,7 +2,7 @@
 
 Connect [Oveyon](https://oveyon.com) email to n8n. This package provides an **Oveyon** action node and an **Oveyon Trigger** for received email and delivery events.
 
-MIT, maintained by Akamind Inc. Version [0.1.0 is published on npm](https://www.npmjs.com/package/@oveyon/n8n-nodes-oveyon) with verified provenance. The maintainer submitted the package to n8n for review on October 12, 2026; n8n verification is pending.
+MIT, maintained by Akamind Inc. Version [0.2.0 is published on npm](https://www.npmjs.com/package/@oveyon/n8n-nodes-oveyon) with verified provenance. The maintainer submitted the package to n8n for review on October 12, 2026; version 0.2.0 addresses the review feedback (see [Changelog](#changelog)), and n8n verification is pending.
 
 ## Requirements and installation
 
@@ -55,7 +55,7 @@ A network timeout does not prove a write failed. Check Oveyon or retry with the 
 
 ### Pagination and output
 
-Get Many fetches pages of at most 100 items. Limit is the total across pages. Return All has a **10,000-item safety ceiling** and raises an error if more results remain; narrow the After/Before filters for larger datasets. Invalid, repeated, or empty-page cursors fail clearly. Cursors belong to the resource that generated them.
+Get Many fetches pages of at most 100 items. Limit is the total across pages. Return All follows the pagination cursor until Oveyon reports no more pages, so a wide date range can return many items; narrow the After/Before filters if you only need part of it. The node handles pagination cursors itself. An invalid or repeated cursor, or an empty page that still carries a cursor, fails clearly instead of looping. Every page counts against the API key's per-minute read limit: when Oveyon answers `rate_limited`, Get Many waits as instructed (at most 60 seconds) and repeats the same page, up to three times in a row. Reads and sends with the same key share one per-minute limit, so use a dedicated read-only API key for large reads; otherwise sends with that key can be refused (HTTP 429) while the read runs.
 
 Simplify is enabled by default for Get and Get Many. Disable it for the complete API response fields. Inbound simplification keeps recipients, per-copy outcome, authentication, agent-safety, and quarantine context. List results reflect Oveyon's retention window; they are not an account-wide archive. Get Content preserves truncation flags and returns data, not rendered HTML.
 
@@ -122,9 +122,23 @@ npm run pack:check
 npm pack --ignore-scripts
 ```
 
-`scan` runs the official static scanner on source and compiled output locally. It does not validate public npm provenance or approve the package. After release, run `npx @n8n/scan-community-package @oveyon/n8n-nodes-oveyon@0.1.0` against the published version and submit through the [n8n Creator Portal](https://creators.n8n.io/nodes).
+`scan` runs the official static scanner on source and compiled output locally. It does not validate public npm provenance or approve the package. After release, run `npx @n8n/scan-community-package @oveyon/n8n-nodes-oveyon@0.2.0` against the published version and submit through the [n8n Creator Portal](https://creators.n8n.io/nodes).
 
-The GitHub Actions workflow builds, tests, scans, compares the tarball with the approved release manifest, then publishes with provenance. The first release used a granular npm token supplied only to the publishing step through a GitHub Actions secret; that bootstrap secret has been removed. Before another release, configure npm trusted publishing for this repository and workflow, or provide an appropriately scoped publishing secret. The [0.1.0 publication run](https://github.com/akamind/n8n-nodes-oveyon/actions/runs/38203969227) succeeded. Registry signatures, provenance identity, the downloaded archive, a clean install, declared component imports, and the compiled-package scanner were checked after publication. Authenticated testing against a dedicated Oveyon review account is still pending; earlier runtime tests used isolated fixtures.
+The GitHub Actions workflow builds, tests, scans, compares the tarball with the approved release manifest, then publishes with provenance. The first release used a granular npm token supplied only to the publishing step through a GitHub Actions secret; that bootstrap secret and the token have been removed. Since 0.2.0, releases publish through npm trusted publishing from a `v*` tag, after a required approval on the `npm` environment; no npm token is stored anywhere. The [0.1.0 publication run](https://github.com/akamind/n8n-nodes-oveyon/actions/runs/38203969227) succeeded. Registry signatures, provenance identity, the downloaded archive, a clean install, declared component imports, and the compiled-package scanner were checked after publication. Authenticated testing against a dedicated Oveyon review account is still pending; earlier runtime tests used isolated fixtures.
+
+## Changelog
+
+### 0.2.0
+
+- **Return All returns every result.** The node follows the pagination cursor until Oveyon reports no more pages. The previous 10,000-item ceiling, and the error it raised, are gone.
+- **The Cursor filter was removed.** The node handles pagination itself; a cursor saved in an existing workflow is ignored.
+- **Get Many waits on the rate limit.** When a long read reaches the API key's per-minute limit, the node waits and repeats the page instead of failing and losing what it had read.
+- **Return All must be a boolean.** An expression that returns another type, such as the string `"false"`, is refused instead of silently enabling Return All.
+- **Fewer notices in the node.** Webhook setup guidance lives in [Webhook setup](#webhook-setup). The Reply sandbox note is now part of the Reply operation description. The at-least-once delivery notice and the credential notices remain.
+
+### 0.1.0
+
+First release.
 
 ## Support and license
 

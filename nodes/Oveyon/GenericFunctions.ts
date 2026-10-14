@@ -1,8 +1,14 @@
-import { NodeOperationError } from 'n8n-workflow';
+import { NodeOperationError, sleep } from 'n8n-workflow';
 import type { IDataObject, IExecuteFunctions } from 'n8n-workflow';
 
 export const API_BASE = 'https://api.oveyon.com';
+// Upper bound of the user-set Limit. Return All has no item ceiling: it follows
+// next_cursor to the end, protected by the repeated-cursor and empty-page guards.
 export const MAX_ITEMS = 10000;
+// A long Return All can outrun the per-minute read limit of the API key. Get Many
+// waits as Oveyon asks (capped) and repeats the same page, a few times in a row.
+const RATE_LIMIT_RETRIES = 3;
+const MAX_RETRY_WAIT_SECONDS = 60;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const API_PATH =
 	/^\/v1\/(?:send|messages(?:\/[0-9a-f-]{36})?|inbound(?:\/[0-9a-f-]{36}(?:\/(?:content|reply))?)?)$/i;
@@ -26,7 +32,8 @@ const ERROR_HELP: Record<string, string> = {
 	quota_exceeded: 'Review your account quota before retrying.',
 	warmup_cap_reached: 'Wait for the sending warm-up allowance to recover.',
 	queue_full: 'The sending queue is temporarily full.',
-	bad_cursor: 'Use a cursor from the same resource or clear the cursor filter.',
+	bad_cursor:
+		'The pagination cursor expired or is invalid. Run the node again, narrowing the date filters if needed.',
 	policy_refused: 'An Oveyon sending policy refused this operation.',
 	message_quarantined: 'A person must review the quarantined message in Oveyon before replying.',
 	recipient_quarantined: 'The selected mailbox copy is held for review in Oveyon.',
@@ -45,6 +52,13 @@ const ERROR_HELP: Record<string, string> = {
 	record_failed: 'The reply could not be recorded. Retry with the same idempotency key.',
 };
 
+function retryAfter(headers: unknown): number | undefined {
+	const retry = isObject(headers) ? headers['retry-after'] : undefined;
+	return (typeof retry === 'string' || typeof retry === 'number') && /^\d{1,5}$/.test(String(retry))
+		? Number(retry)
+		: undefined;
+}
+
 export function safeApiError(status: number, body: unknown, headers: unknown = {}): string {
 	const code = isObject(body) && typeof body.error === 'string' ? body.error : '';
 	const help = Object.hasOwn(ERROR_HELP, code)
@@ -60,11 +74,8 @@ export function safeApiError(status: number, body: unknown, headers: unknown = {
 						: status >= 500
 							? 'Oveyon is temporarily unavailable. Reuse the same idempotency key for writes.'
 							: 'The API refused the request. Check the operation parameters in the Oveyon documentation.';
-	const retry = isObject(headers) ? headers['retry-after'] : undefined;
-	const wait =
-		(typeof retry === 'string' || typeof retry === 'number') && /^\d{1,5}$/.test(String(retry))
-			? ` Retry after at least ${retry} seconds.`
-			: '';
+	const retry = retryAfter(headers);
+	const wait = retry !== undefined ? ` Retry after at least ${retry} seconds.` : '';
 	return `Oveyon API (HTTP ${Number.isInteger(status) ? status : 0}): ${help}${wait}`;
 }
 
@@ -75,13 +86,19 @@ export function messageId(value: unknown): string {
 	return value.trim();
 }
 
-export async function apiRequest(
+interface ApiResponse {
+	statusCode: number;
+	body: unknown;
+	headers: unknown;
+}
+
+async function sendRequest(
 	this: IExecuteFunctions,
 	method: 'GET' | 'POST',
 	path: string,
 	body?: IDataObject,
 	qs?: IDataObject,
-): Promise<IDataObject> {
+): Promise<ApiResponse> {
 	if (!API_PATH.test(path))
 		throw new NodeOperationError(this.getNode(), 'Invalid API resource path.');
 	let response: unknown;
@@ -108,6 +125,10 @@ export async function apiRequest(
 	if (!isObject(response) || typeof response.statusCode !== 'number') {
 		throw new NodeOperationError(this.getNode(), 'Oveyon returned an invalid HTTP response.');
 	}
+	return { statusCode: response.statusCode, body: response.body, headers: response.headers };
+}
+
+function apiResult(this: IExecuteFunctions, response: ApiResponse): IDataObject {
 	if (response.statusCode < 200 || response.statusCode >= 300) {
 		throw new NodeOperationError(
 			this.getNode(),
@@ -119,6 +140,37 @@ export async function apiRequest(
 	return response.body;
 }
 
+export async function apiRequest(
+	this: IExecuteFunctions,
+	method: 'GET' | 'POST',
+	path: string,
+	body?: IDataObject,
+	qs?: IDataObject,
+): Promise<IDataObject> {
+	return apiResult.call(this, await sendRequest.call(this, method, path, body, qs));
+}
+
+// Reads only: a rate-limited page is requested again after the wait Oveyon asks for.
+async function readPage(
+	this: IExecuteFunctions,
+	path: '/v1/messages' | '/v1/inbound',
+	query: IDataObject,
+): Promise<IDataObject> {
+	for (let attempt = 0; ; attempt++) {
+		const response = await sendRequest.call(this, 'GET', path, undefined, query);
+		const code =
+			isObject(response.body) && typeof response.body.error === 'string' ? response.body.error : '';
+		if (response.statusCode !== 429 || code !== 'rate_limited' || attempt >= RATE_LIMIT_RETRIES)
+			return apiResult.call(this, response);
+		// Stopping the execution also ends the wait (older n8n ignores the signal).
+		await sleep(
+			Math.min(retryAfter(response.headers) ?? MAX_RETRY_WAIT_SECONDS, MAX_RETRY_WAIT_SECONDS) *
+				1000,
+			this.getExecutionCancelSignal?.(),
+		);
+	}
+}
+
 export async function getMany(
 	this: IExecuteFunctions,
 	path: '/v1/messages' | '/v1/inbound',
@@ -126,40 +178,37 @@ export async function getMany(
 	returnAll: boolean,
 	limit: number,
 ): Promise<IDataObject[]> {
-	if (!Number.isInteger(limit) || limit < 1 || limit > MAX_ITEMS)
+	if (!returnAll && (!Number.isInteger(limit) || limit < 1 || limit > MAX_ITEMS))
 		throw new Error(`Limit must be between 1 and ${MAX_ITEMS}.`);
-	const target = returnAll ? MAX_ITEMS : limit;
 	const items: IDataObject[] = [];
 	const seen = new Set<string>();
-	let cursor: unknown = filters.cursor;
-	while (items.length < target) {
-		if (cursor !== undefined && cursor !== null && cursor !== '') {
+	// The cursor is a transport detail: it only ever comes from the previous page.
+	let cursor: unknown;
+	for (;;) {
+		const pageSize = returnAll ? 100 : Math.min(100, limit - items.length);
+		if (cursor !== undefined) {
 			if (typeof cursor !== 'string' || cursor.length > 2048 || seen.has(cursor))
 				throw new Error('Invalid or repeated pagination cursor. Narrow the filters and try again.');
 			seen.add(cursor);
 		}
-		const page = await apiRequest.call(this, 'GET', path, undefined, {
+		const page = await readPage.call(this, path, {
 			...filters,
-			limit: Math.min(100, target - items.length),
-			...(cursor ? { cursor: cursor as string } : {}),
+			limit: pageSize,
+			...(cursor !== undefined ? { cursor: cursor as string } : {}),
 		});
 		if (!Array.isArray(page.data) || !page.data.every(isObject))
 			throw new Error('Oveyon returned an invalid list response.');
-		if (page.data.length > Math.min(100, target - items.length))
-			throw new Error('Oveyon returned more items than requested.');
+		if (page.data.length > pageSize) throw new Error('Oveyon returned more items than requested.');
 		items.push(...page.data);
-		cursor = page.next_cursor;
-		if (cursor === null || cursor === undefined || cursor === '') return items;
+		const next = page.next_cursor;
+		if (next === null || next === undefined || next === '') return items;
 		if (page.data.length === 0)
 			throw new Error(
 				'Oveyon returned an empty page with a cursor. Narrow the filters and try again.',
 			);
+		if (!returnAll && items.length >= limit) return items;
+		cursor = next;
 	}
-	if (returnAll && cursor)
-		throw new Error(
-			`Return All exceeds the ${MAX_ITEMS}-item safety limit. Narrow the date filters and run again.`,
-		);
-	return items;
 }
 
 export function simplify(value: IDataObject, resource: string): IDataObject {

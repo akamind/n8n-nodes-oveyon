@@ -91,7 +91,8 @@ export const properties: INodeProperties[] = [
 			{
 				name: 'Reply',
 				value: 'reply',
-				description: 'Reply to a received email',
+				description:
+					'Reply to a received email. Reply uses the sandbox status of the API key: use a sandbox API key to test without delivery.',
 				action: 'Reply to a received email',
 			},
 		],
@@ -186,14 +187,6 @@ export const properties: INodeProperties[] = [
 		],
 	},
 	{
-		displayName:
-			'Reply uses the sandbox status of the API key. Use a sandbox API key to test without delivery.',
-		name: 'replyNotice',
-		type: 'notice',
-		default: '',
-		displayOptions: { show: { resource: ['inbound'], operation: ['reply'] } },
-	},
-	{
 		displayName: 'Options',
 		name: 'replyOptions',
 		type: 'collection',
@@ -228,14 +221,6 @@ export const properties: INodeProperties[] = [
 		description: 'Whether to return all results or only up to a given limit',
 	},
 	{
-		displayName:
-			'Return All stops with an error above 10,000 items. Narrow the date filters for larger sets.',
-		name: 'returnAllNotice',
-		type: 'notice',
-		default: '',
-		displayOptions: { show: { operation: ['getMany'], returnAll: [true] } },
-	},
-	{
 		displayName: 'Limit',
 		name: 'limit',
 		type: 'number',
@@ -265,13 +250,6 @@ export const properties: INodeProperties[] = [
 				type: 'dateTime',
 				default: '',
 				description: 'End of the date range',
-			},
-			{
-				displayName: 'Cursor',
-				name: 'cursor',
-				type: 'string',
-				default: '',
-				description: 'Optional opaque cursor from the same API resource',
 			},
 			{
 				displayName: 'Recipient',

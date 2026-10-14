@@ -25,6 +25,7 @@
     "package-lock.json",
     "package.json",
     "release/approved-0.1.0.json",
+    "release/approved-0.2.0.json",
     "release/github-export-files.json",
     "release/test_verify_release.py",
     "scripts/check-pack.cjs",
@@ -34,6 +35,7 @@
     "tests/actions.test.cjs",
     "tests/display.test.cjs",
     "tests/webhooks.test.cjs",
+    "tests/pagination.test.cjs",
     "tsconfig.json"
   ]
 }

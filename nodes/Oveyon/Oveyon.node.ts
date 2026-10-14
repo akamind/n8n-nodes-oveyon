@@ -121,13 +121,15 @@ export class Oveyon implements INodeType {
 				} else if ((resource === 'email' || resource === 'inbound') && operation === 'getMany') {
 					const filters: IDataObject = {};
 					const selected = this.getNodeParameter('filters', i, {}) as IDataObject;
-					for (const field of ['from', 'to', 'recipient', 'sender', 'cursor'])
+					for (const field of ['from', 'to', 'recipient', 'sender'])
 						if (selected[field]) filters[field] = text(selected[field], 'Filter', 2048, true);
+					const returnAll = this.getNodeParameter('returnAll', i, false);
+					if (typeof returnAll !== 'boolean') throw new UserError('Return All must be a boolean.');
 					result = await getMany.call(
 						this,
 						resource === 'email' ? '/v1/messages' : '/v1/inbound',
 						filters,
-						this.getNodeParameter('returnAll', i, false) as boolean,
+						returnAll,
 						this.getNodeParameter('limit', i, 50) as number,
 					);
 				} else if (

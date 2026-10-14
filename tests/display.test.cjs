@@ -9,22 +9,27 @@ const description = trigger.description;
 const node = { name: 'Oveyon Trigger', type: '@oveyon/n8n-nodes-oveyon.oveyonTrigger', typeVersion: 1, position: [0, 0], parameters: {} };
 const visible = (values, property) => NodeHelpers.displayParameter(values, property, node, description);
 
-for (const [mode, signed, inboundSetup, delivery] of [
-	['inboundSetup', false, true, false],
-	['inboundLive', true, false, false],
-	['deliveryLive', true, false, true],
+for (const [mode, signed, delivery] of [
+	['inboundSetup', false, false],
+	['inboundLive', true, false],
+	['deliveryLive', true, true],
 ]) {
 	test(`n8n display helper: ${mode} exposes the correct credentials and notices`, () => {
 		const values = NodeHelpers.getNodeParameters(description.properties, { mode }, true, false, node, description);
 		assert.equal(values.mode, mode);
 		assert.equal(description.credentials.length, 1, 'Only one descriptor may own the shared credential');
 		assert.equal(visible(values, description.credentials[0]), signed);
-		for (const [name, expected] of [['liveNotice', signed], ['setupNotice', inboundSetup], ['deliveryNotice', delivery], ['events', delivery]]) {
+		for (const [name, expected] of [['liveNotice', signed], ['events', delivery]]) {
 			assert.equal(visible(values, description.properties.find(property => property.name === name)), expected, name);
 		}
 		assert.deepEqual([...NodeHelpers.getActiveCredentialTypes({ ...node, parameters: values }, description)], signed ? ['oveyonWebhookApi'] : []);
 	});
 }
+
+test('setup and delivery guidance live in the README; only the at-least-once notice stays in the trigger', () => {
+	assert.deepEqual(description.properties.filter(property => property.type === 'notice').map(property => property.name), ['liveNotice']);
+	assert.match(description.properties.find(property => property.name === 'liveNotice').displayName, /more than once/);
+});
 
 test('default and repeated mode transitions do not retain a hidden family selector', () => {
 	let values = NodeHelpers.getNodeParameters(description.properties, {}, true, false, node, description);
