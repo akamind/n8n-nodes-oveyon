@@ -2,7 +2,7 @@
 
 Connect [Oveyon](https://oveyon.com) email to n8n. This package provides an **Oveyon** action node and an **Oveyon Trigger** for received email and delivery events.
 
-MIT, maintained by Akamind Inc. Version [0.2.0 is published on npm](https://www.npmjs.com/package/@oveyon/n8n-nodes-oveyon) with verified provenance. The maintainer submitted the package to n8n for review on October 12, 2026; version 0.2.0 addresses the review feedback (see [Changelog](#changelog)), and n8n verification is pending.
+MIT, maintained by Akamind Inc. Version [0.2.0 is published on npm](https://www.npmjs.com/package/@oveyon/n8n-nodes-oveyon) with verified provenance. It is a verified community node: n8n listed version 0.2.0 as verified on October 22, 2026. That version addresses the feedback from n8n's review (see [Changelog](#changelog)).
 
 ## Requirements and installation
 
@@ -10,7 +10,9 @@ MIT, maintained by Akamind Inc. Version [0.2.0 is published on npm](https://www.
 - n8n with community nodes enabled. The development target is **n8n 2.42.6 on Node.js 24**. Earlier versions are not claimed as tested. The `n8n-workflow` peer uses `*` as required by n8n's verification rules; this does not promise compatibility with every n8n version.
 - A public HTTPS n8n webhook URL for events. Keep the n8n clock synchronized.
 
-Self-hosted owners can install `@oveyon/n8n-nodes-oveyon` from **Settings → Community nodes**, following [n8n's installation guide](https://docs.n8n.io/integrations/community-nodes/installation/). Discovery in n8n Cloud requires verification by n8n.
+**From the nodes panel** (n8n Cloud or self-hosted, with verified community nodes enabled): an instance owner or admin opens the nodes panel, searches for **Oveyon**, selects it under **More from the community**, and installs it. See [n8n's guide to verified community nodes](https://docs.n8n.io/integrations/community-nodes/installation-and-management/install-verified-community-nodes).
+
+**By package name** (self-hosted only): owners and admins can install `@oveyon/n8n-nodes-oveyon` from **Settings → Community nodes**, following [n8n's GUI installation guide](https://docs.n8n.io/integrations/community-nodes/installation-and-management/gui-installation).
 
 For local development, build the source and install the resulting npm tarball in an isolated n8n environment. Do not replace a production n8n installation to test the package.
 
